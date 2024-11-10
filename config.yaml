@@ -1,0 +1,10 @@
+seed: 42
+
+# Model Architecture Parameters
+n_past: 5                # Number of past time steps for input
+n_future: 5              # Number of future time steps to predict
+
+# Training Parameters
+epochs: 7
+batch_size: 32
+learning_rate: 0.001
