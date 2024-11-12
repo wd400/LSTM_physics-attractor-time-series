@@ -1,0 +1,57 @@
+name: Security Checks
+
+on: [push, pull_request]
+
+jobs:
+  detect-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install detect-secrets
+        run: |
+          python -m pip install detect-secrets
+
+      - name: Scan for secrets
+        run: |
+          detect-secrets scan > .secrets.baseline
+          detect-secrets audit .secrets.baseline
+
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install truffleHog
+        run: |
+          pip install truffleHog
+
+      - name: Run truffleHog
+        run: |
+          trufflehog --json . > trufflehog_report.json
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install bandit
+        run: |
+          pip install bandit
+
+      - name: Run bandit
+        run: |
+          bandit -r . -o bandit_report.txt
