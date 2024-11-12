@@ -15,21 +15,40 @@ np.random.seed(42)
 tf.random.set_seed(42)
 
 
+base_path = os.path.dirname(os.path.realpath(__file__))
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='ML pipeline runner')
     parser.add_argument('--mode', type=str, required=True, 
                       choices=['split', 'train', 'eval'],
                       help='Mode to run: split, train, or eval')
+    
+
+    
+
+
     parser.add_argument('--dataset_path', type=str,
-                      help='Path to dataset for split mode')
+                      help='Path to dataset for split mode',
+                        default= os.path.join(base_path, 'data')
+                        )
+    
+    parser.add_argument('--split_path', type=str,
+                        help='Path to save split data',
+                        default= os.path.join(base_path, 'split'))
+    parser.add_argument('--model_path', type=str,
+                        help='Path to save model data',
+                        default= os.path.join(base_path, 'model'))
+    parser.add_argument('--eval_path', type=str,
+                        help='Path to save eval data',
+                        default= os.path.join(base_path, 'eval'))
+    
     parser.add_argument('--hyperparams', type=str,
                       help='Path to hyperparameters config file')
     parser.add_argument('--mlflow_tracking_uri', type=str, 
                       help='MLflow tracking URI')
     parser.add_argument('--experiment_id', type=str,
                       help='MLflow experiment ID')
-    parser.add_argument('--base_path', type=str,
-                        help='Base path for saving split, model, and eval data')
+    
     
     return parser.parse_args()
 
@@ -187,18 +206,15 @@ def evaluate_model(split_path: str, model_path: str, eval_path: str) -> None:
 
 def main() -> None:
     args: argparse.Namespace = parse_args()
-    
-    # Set up paths
-    base_path: str = args.base_path if args.base_path is not None else os.getcwd()
-    split_path: str = os.path.join(base_path, 'split')
-    model_path: str = os.path.join(base_path, 'model')
-    eval_path: str = os.path.join(base_path, 'eval')
+
     
     # Set up MLflow
     if args.mlflow_tracking_uri:
         mlflow.set_tracking_uri(args.mlflow_tracking_uri)
     if args.experiment_id:
         mlflow.set_experiment(args.experiment_id)
+    else:
+        mlflow.set_experiment('default')
     
     # Load config if provided
     config: Optional[Dict[str, Any]] = None
@@ -209,17 +225,25 @@ def main() -> None:
     if args.mode == 'split':
         if not args.dataset_path:
             raise ValueError("dataset_path is required for split mode")
-        split_dataset(args.dataset_path, split_path)
+        split_dataset(args.dataset_path, args.split_path)
     
     elif args.mode == 'train':
         if not config:
             raise ValueError("hyperparams config is required for train mode")
-        os.makedirs(model_path, exist_ok=True)
-        train_model(split_path, model_path, config)
+        os.makedirs( args.model_path, exist_ok=True)
+            
+        train_model( args.split_path
+            , 
+            args.model_path
+                    
+                    ,
+                      config)
     
     elif args.mode == 'eval':
-        os.makedirs(eval_path, exist_ok=True)
-        evaluate_model(split_path, model_path, eval_path)
+        os.makedirs(
+            args.eval_path, exist_ok=True)
+        evaluate_model(
+            args.split_path, args.model_path, args.eval_path)
 
 if __name__ == "__main__":
     main()
