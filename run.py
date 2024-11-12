@@ -43,7 +43,7 @@ def split_dataset(dataset_path: str, split_path: str) -> None:
     os.makedirs(split_path, exist_ok=True)
     
     # Load dataset
-    df: pd.DataFrame = pd.read_csv(dataset_path)
+    df: pd.DataFrame = pd.read_csv(f"{dataset_path}/data.csv")
     df = df.iloc[:, :-8]
     df = df.drop(df.columns[0], axis=1)
     
